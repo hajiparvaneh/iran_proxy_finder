@@ -1,22 +1,29 @@
 import argparse
 import json
 import os
-
-from scraper import get_proxies
-from tester import test_proxy
-
-# The output file path is resolved relative to the script location by default,
-# placing 'working_proxies.json' inside the 'app/' directory. You can override
-# this by setting the OUTPUT_FILE environment variable to an absolute or relative path.
-OUTPUT_FILE = Path(os.environ.get("OUTPUT_FILE", Path(__file__).parent / "working_proxies.json"))
+import threading
+import time
+from pathlib import Path
+from typing import Callable, List
 
 from flask import Flask, jsonify, render_template_string
 
 from scraper import get_proxies
 from tester import test_proxy
 
-OUTPUT_FILE = Path(__file__).parent / "working_proxies.json"
 
+# The output file path is resolved relative to the script location by default,
+# placing 'working_proxies.json' inside the 'app/' directory. You can override
+# this by setting the OUTPUT_FILE environment variable to an absolute or relative path.
+def resolve_output_path() -> Path:
+    output_env = os.environ.get("OUTPUT_FILE")
+    if output_env:
+        env_path = Path(output_env)
+        return env_path if env_path.is_absolute() else Path(__file__).parent / env_path
+    return Path(__file__).parent / "working_proxies.json"
+
+
+OUTPUT_FILE = resolve_output_path()
 
 LogHandler = Callable[[str], None]
 
@@ -25,17 +32,10 @@ class LogBuffer:
     def __init__(self, max_entries: int = 500):
         self._entries: List[str] = []
         self._max_entries = max_entries
-    try:
-        with OUTPUT_FILE.open("w", encoding="utf-8") as f:
-            json.dump(working, f, indent=2)
-        print(f"Results saved to {OUTPUT_FILE}")
-    except IOError as e:
-        print(f"Error saving results to {OUTPUT_FILE}: {e}")
-        print("Printing working proxies to stdout as backup:")
-        print(json.dumps(working, indent=2))
+        self._lock = threading.Lock()
 
-    print("\nSummary:")
-    print(f"Working proxies: {len(working)}")
+    def add(self, entry: str) -> None:
+        with self._lock:
             self._entries.append(entry)
             if len(self._entries) > self._max_entries:
                 self._entries = self._entries[-self._max_entries :]
@@ -87,6 +87,16 @@ class ProxyRunner:
             }
 
 
+def persist_results(working: List[dict]) -> None:
+    try:
+        with OUTPUT_FILE.open("w", encoding="utf-8") as f:
+            json.dump(working, f, indent=2)
+    except IOError as exc:
+        print(f"Error saving results to {OUTPUT_FILE}: {exc}")
+        print("Printing working proxies to stdout as backup:")
+        print(json.dumps(working, indent=2))
+
+
 def run_workflow(log: LogHandler) -> List[dict]:
     log("Scraping proxies...")
     proxies = get_proxies()
@@ -101,8 +111,7 @@ def run_workflow(log: LogHandler) -> List[dict]:
         else:
             log(f"[FAIL] {proxy}")
 
-    with OUTPUT_FILE.open("w", encoding="utf-8") as f:
-        json.dump(working, f, indent=2)
+    persist_results(working)
 
     log("Summary:")
     log(f"Working proxies: {len(working)}")
