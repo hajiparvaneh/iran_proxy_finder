@@ -1,10 +1,14 @@
 import argparse
 import json
-import threading
-import time
-from datetime import datetime
-from pathlib import Path
-from typing import Callable, List
+import os
+
+from scraper import get_proxies
+from tester import test_proxy
+
+# The output file path is resolved relative to the script location by default,
+# placing 'working_proxies.json' inside the 'app/' directory. You can override
+# this by setting the OUTPUT_FILE environment variable to an absolute or relative path.
+OUTPUT_FILE = Path(os.environ.get("OUTPUT_FILE", Path(__file__).parent / "working_proxies.json"))
 
 from flask import Flask, jsonify, render_template_string
 
