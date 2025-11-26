@@ -36,6 +36,11 @@
         cursor: pointer;
         font-size: 1rem;
       }
+      .btn-sm {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.85rem;
+        border-radius: 5px;
+      }
       .btn-primary {
         background: var(--primary);
         color: white;
@@ -43,6 +48,10 @@
       .btn-danger {
         background: var(--danger);
         color: white;
+      }
+      .btn-ghost {
+        background: #f1f5f9;
+        color: #0f172a;
       }
       .btn:disabled {
         background: #94a3b8;
@@ -83,6 +92,24 @@
       .summary {
         margin-top: 1rem;
         color: #334155;
+      }
+      .proxy-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        background: #f8fafc;
+      }
+      .proxy-left {
+        color: #16a34a;
+        font-weight: 600;
+      }
+      .proxy-actions {
+        display: flex;
+        gap: 0.5rem;
       }
       .controls {
         display: flex;
@@ -226,9 +253,35 @@
           .join("<br>");
         logsPre.innerHTML = html;
         const oks = data.logs.filter((l) => l.startsWith("[OK]"));
-        document.getElementById("found").innerHTML = oks
-          .map((l) => '<div style="color:#16a34a">' + esc(l) + "</div>")
-          .join("");
+        const seen = new Set();
+        const items = [];
+        for (const line of oks) {
+          const m = line.match(/^\[OK\]\s+([^\s]+)\s+via\s+/);
+          if (!m) continue;
+          const proxy = m[1];
+          if (seen.has(proxy)) continue;
+          seen.add(proxy);
+          const parts = proxy.split(":");
+          if (parts.length !== 2) continue;
+          const ip = parts[0];
+          const port = parts[1];
+          items.push(
+            '<div class="proxy-item">' +
+              '<div class="proxy-left">' +
+              esc(proxy) +
+              "</div>" +
+              '<div class="proxy-actions">' +
+              '<button class="btn btn-sm btn-ghost" onclick="copyText(\'' +
+              esc(ip) +
+              "')\">Copy IP</button>" +
+              '<button class="btn btn-sm btn-ghost" onclick="copyText(\'' +
+              esc(port) +
+              "')\">Copy Port</button>" +
+              "</div>" +
+              "</div>"
+          );
+        }
+        document.getElementById("found").innerHTML = items.join("");
       }
 
       async function refreshStatus() {
@@ -304,6 +357,21 @@
         stopButton.innerHTML = "Stop";
       }
       stopButton.onclick = stopScan;
+
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (e) {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand("copy");
+          } catch (_) {}
+          document.body.removeChild(ta);
+        }
+      }
 
       async function refreshResults() {
         await fetchLogs();

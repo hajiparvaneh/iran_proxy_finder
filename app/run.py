@@ -188,7 +188,7 @@ def run_workflow(
     return working
 
 
-def create_app(autostart: bool = True) -> Flask:
+def create_app(autostart: bool = False) -> Flask:
     log_buffer = LogBuffer()
 
     def log_message(message: str) -> None:
@@ -266,9 +266,9 @@ def main() -> None:
         help="Run the workflow once in CLI mode instead of starting the web UI",
     )
     parser.add_argument(
-        "--no-autostart",
+        "--autostart",
         action="store_true",
-        help="Disable automatic scan on server start",
+        help="Enable automatic scan on server start",
     )
     parser.add_argument("--host", default="0.0.0.0", help="Flask host")
     parser.add_argument("--port", type=int, default=5000, help="Flask port")
@@ -278,7 +278,7 @@ def main() -> None:
         run_workflow(print)
         return
 
-    app = create_app(autostart=not args.no_autostart)
+    app = create_app(autostart=(args.autostart or os.environ.get("AUTOSTART") == "1"))
     app.run(host=args.host, port=args.port)
 
 
