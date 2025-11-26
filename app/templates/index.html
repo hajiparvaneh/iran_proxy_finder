@@ -133,6 +133,60 @@
         box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
         border-color: var(--primary);
       }
+      .input {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #111827;
+      }
+      .input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
+        border-color: var(--primary);
+      }
+      .input.short {
+        width: 110px;
+      }
+      .field {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        position: relative;
+      }
+      .help-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid #cbd5e1;
+        background: #f1f5f9;
+        color: #0f172a;
+        line-height: 22px;
+        text-align: center;
+        font-weight: 600;
+        padding: 0;
+      }
+      .help-icon:hover {
+        background: #e2e8f0;
+      }
+      .tooltip {
+        position: absolute;
+        top: 2.6rem;
+        left: 0;
+        background: #111827;
+        color: #f8fafc;
+        border-radius: 8px;
+        padding: 0.6rem 0.8rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+        font-size: 0.9rem;
+        max-width: 340px;
+        display: none;
+        z-index: 20;
+      }
+      .help-icon:focus + .tooltip,
+      .help-icon:hover + .tooltip {
+        display: block;
+      }
       .footer {
         position: fixed;
         left: 0;
@@ -190,17 +244,64 @@
         <button id="start-btn" class="btn btn-primary">Start Scan</button>
         <button id="stop-btn" class="btn btn-danger" disabled>Stop</button>
         <span id="status-pill" class="pill idle">Idle</span>
-        <label for="target-select">Target:</label>
-        <select id="target-select" class="select">
-          <option value="all" selected>All Static Targets</option>
-          <option value="https://api.ipify.org?format=json">
-            https://api.ipify.org?format=json
-          </option>
-          <option value="https://httpbin.org/get">
-            https://httpbin.org/get
-          </option>
-          <option value="https://icanhazip.com">https://icanhazip.com</option>
-        </select>
+        <div class="field">
+          <label for="target-select">Target:</label>
+          <select id="target-select" class="select">
+            <option value="all" selected>All Static Targets</option>
+            <option value="https://api.ipify.org?format=json">
+              https://api.ipify.org?format=json
+            </option>
+            <option value="https://httpbin.org/get">
+              https://httpbin.org/get
+            </option>
+            <option value="https://icanhazip.com">https://icanhazip.com</option>
+          </select>
+        </div>
+        <br />
+        <div class="field">
+          <label for="max-proxies">Max proxies:</label>
+          <input
+            id="max-proxies"
+            class="input short"
+            type="number"
+            min="1"
+            value="200"
+          />
+          <button
+            id="max-proxies-help"
+            class="help-icon"
+            type="button"
+            aria-label="About max proxies"
+          >
+            ?
+          </button>
+          <div class="tooltip">
+            Caps how many scraped proxies will be tested. Higher values increase
+            requests and duration.
+          </div>
+        </div>
+        <div class="field">
+          <label for="max-per-target">Max per target:</label>
+          <input
+            id="max-per-target"
+            class="input short"
+            type="number"
+            min="1"
+            value="50"
+          />
+          <button
+            id="max-per-target-help"
+            class="help-icon"
+            type="button"
+            aria-label="About max per target"
+          >
+            ?
+          </button>
+          <div class="tooltip">
+            Limits how many proxies are tested per target URL. Useful when
+            multiple targets are selected.
+          </div>
+        </div>
       </div>
       <div class="summary" id="summary">Waiting to start...</div>
     </div>
@@ -228,6 +329,8 @@
       const statusPill = document.getElementById("status-pill");
       const summary = document.getElementById("summary");
       const targetSelect = document.getElementById("target-select");
+      const maxProxiesInput = document.getElementById("max-proxies");
+      const maxPerTargetInput = document.getElementById("max-per-target");
       const STATIC_TARGETS = [
         "https://api.ipify.org?format=json",
         "https://httpbin.org/get",
@@ -331,6 +434,14 @@
           const sel = targetSelect.value;
           const payload =
             sel === "all" ? { targets: STATIC_TARGETS } : { targets: [sel] };
+          const mp = parseInt(maxProxiesInput.value, 10);
+          if (!Number.isNaN(mp) && mp > 0) {
+            payload.max_proxies = mp;
+          }
+          const mpt = parseInt(maxPerTargetInput.value, 10);
+          if (!Number.isNaN(mpt) && mpt > 0) {
+            payload.max_per_target = mpt;
+          }
           const res = await fetch("/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

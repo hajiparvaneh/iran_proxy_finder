@@ -226,6 +226,31 @@ def create_app(autostart: bool = False) -> Flask:
             os.environ["TARGET_URLS"] = ",".join(str(t) for t in targets)
         else:
             os.environ.pop("TARGET_URLS", None)
+        max_proxies = data.get("max_proxies")
+        if max_proxies is not None:
+            try:
+                val = int(max_proxies)
+                if val > 0:
+                    os.environ["MAX_PROXIES"] = str(val)
+                else:
+                    os.environ.pop("MAX_PROXIES", None)
+            except (TypeError, ValueError):
+                os.environ.pop("MAX_PROXIES", None)
+        else:
+            os.environ.pop("MAX_PROXIES", None)
+
+        max_per_target = data.get("max_per_target")
+        if max_per_target is not None:
+            try:
+                val = int(max_per_target)
+                if val > 0:
+                    os.environ["MAX_PER_TARGET"] = str(val)
+                else:
+                    os.environ.pop("MAX_PER_TARGET", None)
+            except (TypeError, ValueError):
+                os.environ.pop("MAX_PER_TARGET", None)
+        else:
+            os.environ.pop("MAX_PER_TARGET", None)
         started = runner.start()
         if not started:
             return "Scan already running", 409
