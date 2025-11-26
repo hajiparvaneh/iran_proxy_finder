@@ -138,10 +138,10 @@ def create_app(autostart: bool = True) -> Flask:
         return render_template_string(
             """
             <!doctype html>
-            <html lang=\"en\">
+            <html lang="en">
             <head>
-              <meta charset=\"utf-8\">
-              <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
               <title>Iran Proxy Finder</title>
               <style>
                 body { font-family: Arial, sans-serif; margin: 2rem auto; max-width: 900px; background: #f7f7f7; color: #1f2937; }
@@ -159,17 +159,17 @@ def create_app(autostart: bool = True) -> Flask:
             </head>
             <body>
               <h1>Iran Proxy Finder</h1>
-              <div class=\"card\">
+              <div class="card">
                 <p>Start a new scan to fetch, test, and save working Iranian proxies. Logs will appear below in real time.</p>
                 <div>
-                  <button id=\"start-btn\" onclick=\"startScan()\">Start Scan</button>
-                  <span id=\"status-pill\" class=\"pill idle\">Idle</span>
+                  <button id="start-btn">Start Scan</button>
+                  <span id="status-pill" class="pill idle">Idle</span>
                 </div>
-                <div class=\"summary\" id=\"summary\">Waiting to start...</div>
+                <div class="summary" id="summary">Waiting to start...</div>
               </div>
-              <div class=\"card\" style=\"margin-top: 1rem;\">
+              <div class="card" style="margin-top: 1rem;">
                 <h3>Logs</h3>
-                <pre id=\"logs\"></pre>
+                <pre id="logs"></pre>
               </div>
               <script>
                 const startButton = document.getElementById('start-btn');
@@ -180,7 +180,7 @@ def create_app(autostart: bool = True) -> Flask:
                 async function fetchLogs() {
                   const res = await fetch('/logs');
                   const data = await res.json();
-                  logsPre.textContent = data.logs.join('\n');
+                  logsPre.textContent = data.logs.join('\\n');
                 }
 
                 async function refreshStatus() {
@@ -203,13 +203,19 @@ def create_app(autostart: bool = True) -> Flask:
 
                 async function startScan() {
                   startButton.disabled = true;
-                  const res = await fetch('/start', { method: 'POST' });
-                  if (!res.ok) {
-                    const msg = await res.text();
-                    alert(msg || 'Unable to start scan');
+                  try {
+                    const res = await fetch('/start', { method: 'POST' });
+                    if (!res.ok) {
+                      const msg = await res.text();
+                      alert(msg || 'Unable to start scan');
+                    }
+                  } catch (error) {
+                      console.error('Failed to start scan:', error);
+                      alert('Failed to start scan. See console for details.');
                   }
                   await refreshStatus();
                 }
+                startButton.onclick = startScan;
 
                 async function refreshResults() {
                   await fetchLogs();

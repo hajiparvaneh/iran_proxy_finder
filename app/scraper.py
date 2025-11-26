@@ -4,16 +4,25 @@ from typing import List
 import requests
 from bs4 import BeautifulSoup
 
-PROXY_LIST_URL = "https://spys.one/free-proxy-list/IR/"
+SOURCES = [
+    "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&country=IR&timeout=10000&simplified=true",
+    "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=https&country=IR&timeout=10000&simplified=true",
+    "https://www.proxy-list.download/api/v1/get?type=http&country=IR",
+    "https://www.proxy-list.download/api/v1/get?type=https&country=IR",
+    "https://free-proxy-list.net/ir",
+    "https://spys.one/free-proxy-list/IR/",
+]
 
 
-def fetch_proxy_page(url: str = PROXY_LIST_URL) -> str:
+def fetch_proxy_page(url: str) -> str:
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/122.0 Safari/537.36"
-        )
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
     }
     response = requests.get(url, headers=headers, timeout=15)
     response.raise_for_status()
@@ -52,15 +61,30 @@ def extract_proxies(html: str) -> List[str]:
 
 
 def get_proxies() -> List[str]:
-    try:
-        html = fetch_proxy_page()
-    except requests.RequestException as exc:
-        print(f"Failed to fetch proxy list: {exc}")
-        return []
+    all_proxies: List[str] = []
+    seen = set()
+    for url in SOURCES:
+        try:
+            html = fetch_proxy_page(url)
+        except requests.RequestException as exc:
+            print(f"Failed to fetch from {url}: {exc}")
+            continue
 
-    proxies = extract_proxies(html)
-    print(f"Extracted {len(proxies)} unique proxies.")
-    return proxies
+        if "displayproxies" in url or "/api/v1/get" in url:
+            lines = [line.strip() for line in html.splitlines() if line.strip()]
+            for line in lines:
+                if ":" in line and line not in seen:
+                    seen.add(line)
+                    all_proxies.append(line)
+        else:
+            extracted = extract_proxies(html)
+            for proxy in extracted:
+                if proxy not in seen:
+                    seen.add(proxy)
+                    all_proxies.append(proxy)
+
+    print(f"Extracted {len(all_proxies)} unique proxies.")
+    return all_proxies
 
 
 __all__ = ["get_proxies"]
