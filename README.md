@@ -25,9 +25,11 @@ A fully dockerized utility that scrapes publicly available Iranian proxies, test
    git clone <your-private-repo-url>
    cd iran_proxy_finder
    ```
-2. Build and run:
+2. Build and run (default web UI port is 5000). If that port is busy, set `HOST_PORT` to any free port (for example 5001):
    ```bash
    docker compose up --build
+   # or
+   HOST_PORT=5001 docker compose up --build
    ```
 3. Open the web dashboard at [http://localhost:5000](http://localhost:5000).
    - Click **Start Scan** to fetch and validate proxies.
