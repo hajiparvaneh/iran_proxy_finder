@@ -23,7 +23,10 @@ def fetch_proxy_page(url: str = PROXY_LIST_URL) -> str:
 def extract_proxies(html: str) -> List[str]:
     soup = BeautifulSoup(html, "lxml")
     text_content = soup.get_text(" ")
-    ip_port_pattern = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}:\d+\b")
+    ip_port_pattern = re.compile(
+        r"\b(?:(?:25[0-5]|2[0-4][0-9]|1\d{2}|[1-9]?\d)\.){3}"
+        r"(?:25[0-5]|2[0-4][0-9]|1\d{2}|[1-9]?\d):\d+\b"
+    )
 
     seen = set()
     proxies: List[str] = []
