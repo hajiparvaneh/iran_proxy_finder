@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+  proxy-scraper:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: ["python", "run.py"]
+    restart: unless-stopped
