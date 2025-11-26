@@ -19,6 +19,7 @@ def test_proxy(proxy: str) -> Tuple[bool, float | None]:
         if response.status_code == 200:
             return True, latency
     except requests.RequestException:
+        # Proxy failed to connect or timed out - treat as non-working proxy
         pass
     return False, None
 
