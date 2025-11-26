@@ -9,6 +9,6 @@ services:
       - ./app:/app
     working_dir: /app
     command: ["python", "run.py"]
-    ports:
+    restart: "no"
       - "5000:5000"
     restart: unless-stopped
