@@ -21,12 +21,17 @@ class LogBuffer:
     def __init__(self, max_entries: int = 500):
         self._entries: List[str] = []
         self._max_entries = max_entries
-        self._lock = threading.Lock()
+    try:
+        with OUTPUT_FILE.open("w", encoding="utf-8") as f:
+            json.dump(working, f, indent=2)
+        print(f"Results saved to {OUTPUT_FILE}")
+    except IOError as e:
+        print(f"Error saving results to {OUTPUT_FILE}: {e}")
+        print("Printing working proxies to stdout as backup:")
+        print(json.dumps(working, indent=2))
 
-    def add(self, message: str) -> None:
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        entry = f"[{timestamp} UTC] {message}"
-        with self._lock:
+    print("\nSummary:")
+    print(f"Working proxies: {len(working)}")
             self._entries.append(entry)
             if len(self._entries) > self._max_entries:
                 self._entries = self._entries[-self._max_entries :]
