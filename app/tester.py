@@ -14,7 +14,7 @@ def test_proxy(proxy: str) -> Tuple[bool, float | None]:
 
     try:
         start = time.monotonic()
-        response = requests.get(TARGET_URL, proxies=proxies, timeout=8)
+        response = requests.get(TARGET_URL, proxies=proxies, timeout=8, verify=True)
         latency = time.monotonic() - start
         if response.status_code == 200:
             return True, latency
