@@ -37,18 +37,16 @@ def extract_proxies(html: str) -> List[str]:
             seen.add(proxy)
             proxies.append(proxy)
 
-    if proxies:
-        return proxies
-
-    proxy_cells = soup.find_all("td")
-    for cell in proxy_cells:
-        cell_text = cell.get_text(strip=True)
-        match = ip_port_pattern.search(cell_text)
-        if match:
-            proxy = match.group(0)
-            if proxy not in seen:
-                seen.add(proxy)
-                proxies.append(proxy)
+    if not proxies:
+        proxy_cells = soup.find_all("td")
+        for cell in proxy_cells:
+            cell_text = cell.get_text(strip=True)
+            match = ip_port_pattern.search(cell_text)
+            if match:
+                proxy = match.group(0)
+                if proxy not in seen:
+                    seen.add(proxy)
+                    proxies.append(proxy)
 
     return proxies
 
