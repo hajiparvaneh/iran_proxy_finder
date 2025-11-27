@@ -2,6 +2,8 @@
 
 Find which public Iranian proxies work for your connection right now. Run locally, test quickly, and then use a working proxy with your browser’s proxy extension or system proxy settings to obtain an IR IP for opening Iran‑only websites (e.g., banks).
 
+![Screenshot](app/assets/img/Screenshot_1_0_0.png)
+
 ## Prerequisites
 - Docker and Docker Compose (recommended), or
 - Python 3.11+ with `pip` (for local runs)
