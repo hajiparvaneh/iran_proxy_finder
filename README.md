@@ -81,6 +81,16 @@ docker compose up --build
   ```
 - Latest logs are visible in the web UI and printed to stdout.
 
+## Frontend (Angular)
+- A new Angular 18 dashboard lives in `frontend/`.
+- Build the UI to generate production assets into `app/static/ui`:
+  ```bash
+  cd frontend
+  npm install
+  npm run build
+  ```
+- The Flask app automatically serves the Angular build when `app/static/ui/index.html` exists. Without a build, it falls back to the legacy Jinja template in `app/templates/legacy_index.html`.
+
 ## Web API
 - `POST /start` – start a scan (no body)
 - `GET /logs` – recent log lines

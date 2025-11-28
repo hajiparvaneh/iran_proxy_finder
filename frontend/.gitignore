@@ -1,0 +1,7 @@
+/node_modules
+/.angular
+/coverage
+/dist
+/.vs
+/.idea
+.DS_Store
