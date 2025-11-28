@@ -1,0 +1,124 @@
+<header class="page-header">
+  <div class="title-block">
+    <img src="/assets/img/iran-proxy-finder-256.png" alt="Iran Proxy Finder logo" class="logo" />
+    <div>
+      <p class="eyebrow">Dashboard</p>
+      <h1>Iran Proxy Finder</h1>
+      <p class="lede">
+        Discover working Iranian proxies with live validation, exportable results, and real-time logs.
+      </p>
+    </div>
+  </div>
+  <div class="status-chip" [class]="statusClass()">
+    <span class="dot"></span>
+    {{ statusLabel() }}
+  </div>
+</header>
+
+<section class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>Scan configuration</h2>
+      <p class="muted">Provide targets and limits before starting the scan.</p>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" type="button" (click)="refreshStatus()">Refresh</button>
+      <span class="timestamp" *ngIf="lastUpdated()">Updated {{ lastUpdated() | date: 'shortTime' }}</span>
+    </div>
+  </div>
+
+  <form [formGroup]="form" class="form-grid" (ngSubmit)="startScan()">
+    <label class="field">
+      <span>Targets</span>
+      <textarea
+        formControlName="targets"
+        rows="3"
+        placeholder="One URL per line"
+        aria-label="Targets to test"
+      ></textarea>
+      <small class="hint">Separate with new lines or commas. Leave empty to use server defaults.</small>
+    </label>
+
+    <div class="field-row">
+      <label class="field">
+        <span>Max proxies</span>
+        <input type="number" formControlName="maxProxies" min="1" placeholder="e.g. 150" />
+      </label>
+      <label class="field">
+        <span>Max per target</span>
+        <input type="number" formControlName="maxPerTarget" min="1" placeholder="e.g. 75" />
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn primary" type="submit" [disabled]="isStarting()">{{ isStarting() ? 'Starting…' : 'Start scan' }}</button>
+      <button class="btn danger" type="button" (click)="stopScan()" [disabled]="isStopping()">{{ isStopping() ? 'Stopping…' : 'Stop scan' }}</button>
+      <p class="status" *ngIf="statusMessage()">{{ statusMessage() }}</p>
+    </div>
+  </form>
+</section>
+
+<section class="grid">
+  <article class="card">
+    <div class="card-head">
+      <div>
+        <p class="eyebrow">State</p>
+        <h3>Runner</h3>
+      </div>
+      <span class="pill" [class]="statusClass()">{{ statusLabel() }}</span>
+    </div>
+    <dl class="meta">
+      <div>
+        <dt>Running</dt>
+        <dd>{{ status()?.running ? 'Yes' : 'No' }}</dd>
+      </div>
+      <div>
+        <dt>Started</dt>
+        <dd>{{ formatTimestamp(status()?.last_started ?? null) }}</dd>
+      </div>
+      <div>
+        <dt>Finished</dt>
+        <dd>{{ formatTimestamp(status()?.last_finished ?? null) }}</dd>
+      </div>
+    </dl>
+  </article>
+
+  <article class="card">
+    <div class="card-head">
+      <div>
+        <p class="eyebrow">Output</p>
+        <h3>Working proxies</h3>
+      </div>
+      <span class="badge">{{ results().length }}</span>
+    </div>
+
+    <div class="proxies" *ngIf="results().length; else emptyState">
+      <div class="proxy" *ngFor="let result of results(); trackBy: trackByProxy">
+        <div class="proxy-meta">
+          <div class="proxy-host">{{ result.proxy }}</div>
+          <div class="proxy-target">{{ result.target }}</div>
+        </div>
+        <div class="proxy-actions">
+          <span class="latency">{{ result.latency }}s · {{ result.scheme }}</span>
+          <button class="btn ghost" type="button" (click)="copyProxy(result.proxy)">Copy</button>
+        </div>
+      </div>
+    </div>
+    <ng-template #emptyState>
+      <p class="muted">No working proxies yet. Start a scan to populate results.</p>
+    </ng-template>
+  </article>
+</section>
+
+<section class="card logs">
+  <div class="card-head">
+    <div>
+      <p class="eyebrow">Live</p>
+      <h3>Logs</h3>
+    </div>
+    <button class="btn ghost" type="button" (click)="refreshLogs()">Refresh</button>
+  </div>
+  <pre aria-live="polite">{{ logs().join('\n') }}</pre>
+</section>
+
+<footer class="footer">Data refreshes automatically every few seconds. Keep this tab open while scanning.</footer>

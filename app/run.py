@@ -25,6 +25,7 @@ def resolve_output_path() -> Path:
 
 OUTPUT_FILE = resolve_output_path()
 ASSET_IMG_DIR = Path(__file__).parent / "assets" / "img"
+FRONTEND_DIST = Path(__file__).parent / "static" / "ui"
 
 LogHandler = Callable[[str], None]
 
@@ -200,14 +201,22 @@ def create_app(autostart: bool = False) -> Flask:
     if autostart:
         runner.start()
 
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="static", static_url_path="/static")
 
     @app.route("/")
     def index() -> str:
-        return render_template("index.html")
+        dist_index = FRONTEND_DIST / "index.html"
+        if dist_index.exists():
+            return send_from_directory(str(FRONTEND_DIST), "index.html")
+        return render_template("legacy_index.html")
 
     @app.route("/favicon.ico")
     def favicon():
+        dist_favicon = FRONTEND_DIST / "favicon.ico"
+        if dist_favicon.exists():
+            return send_from_directory(
+                str(FRONTEND_DIST), "favicon.ico", mimetype="image/x-icon"
+            )
         return send_from_directory(
             str(ASSET_IMG_DIR),
             "iran-proxy-finder.ico",
