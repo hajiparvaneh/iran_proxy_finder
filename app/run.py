@@ -206,7 +206,7 @@ def run_workflow(
                 else:
                     log(f"[FAIL] {proxy}")
         finally:
-            executor.shutdown(wait=False, cancel_futures=True)
+            executor.shutdown(wait=True, cancel_futures=True)
 
     persist_results(working)
 
