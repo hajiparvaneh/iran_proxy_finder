@@ -129,7 +129,7 @@ def run_workflow(
             if val > 0:
                 max_workers = val
         except ValueError:
-            pass
+            log(f"Warning: MAX_WORKERS ('{max_workers_env}') is not a valid integer. Using default value {max_workers}.")
     log(f"Using up to {max_workers} concurrent workers")
 
     max_env = os.environ.get("MAX_PROXIES")
