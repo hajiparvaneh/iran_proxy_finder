@@ -340,6 +340,7 @@
       const startButton = document.getElementById("start-btn");
       const stopButton = document.getElementById("stop-btn");
       const logsPre = document.getElementById("logs");
+      const foundEl = document.getElementById("found");
       const statusPill = document.getElementById("status-pill");
       const summary = document.getElementById("summary");
       const targetSelect = document.getElementById("target-select");
@@ -398,7 +399,6 @@
               "</div>"
           );
         }
-        const foundEl = document.getElementById("found");
         foundEl.innerHTML = items.join("");
         foundEl.querySelectorAll(".copy-ip").forEach((btn) => {
           btn.addEventListener("click", async () => {
@@ -444,6 +444,9 @@
 
       async function startScan() {
         startButton.disabled = true;
+        logsPre.innerHTML = "";
+        foundEl.innerHTML = "";
+        summary.textContent = "Starting new scan...";
         try {
           const sel = targetSelect.value;
           const payload =

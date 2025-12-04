@@ -3,6 +3,7 @@ import json
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, List
 
@@ -120,6 +121,17 @@ def run_workflow(
     proxies = get_proxies()
     log(f"Total proxies found: {len(proxies)}")
 
+    max_workers_env = os.environ.get("MAX_WORKERS")
+    max_workers = 20
+    if max_workers_env:
+        try:
+            val = int(max_workers_env)
+            if val > 0:
+                max_workers = val
+        except ValueError:
+            log(f"Warning: MAX_WORKERS ('{max_workers_env}') is not a valid integer. Using default value {max_workers}.")
+    log(f"Using up to {max_workers} concurrent workers")
+
     max_env = os.environ.get("MAX_PROXIES")
     if max_env:
         try:
@@ -156,27 +168,45 @@ def run_workflow(
 
     working: List[dict] = []
     for target in targets:
+        if stop_event is not None and stop_event.is_set():
+            break
         log(f"Testing target: {target}")
-        tested = 0
-        for proxy in proxies:
+        proxies_to_test = proxies[:per_target_limit] if per_target_limit else proxies
+        if not proxies_to_test:
+            continue
+
+        def worker(p: str) -> tuple[str, bool, float | None, str | None]:
             if stop_event is not None and stop_event.is_set():
-                break
-            if per_target_limit is not None and tested >= per_target_limit:
-                break
-            is_working, latency, scheme = test_proxy(proxy, target_url=target)
-            tested += 1
-            if is_working and latency is not None:
-                working.append(
-                    {
-                        "proxy": proxy,
-                        "latency": round(latency, 3),
-                        "scheme": scheme,
-                        "target": target,
-                    }
-                )
-                log(f"[OK] {proxy} via {scheme} - {latency:.3f}s")
-            else:
-                log(f"[FAIL] {proxy}")
+                return p, False, None, None
+            is_working, latency, scheme = test_proxy(p, target_url=target)
+            return p, is_working, latency, scheme
+
+        pool_size = min(max_workers, len(proxies_to_test))
+        executor = ThreadPoolExecutor(max_workers=pool_size)
+        futures = [executor.submit(worker, proxy) for proxy in proxies_to_test]
+        try:
+            for future in as_completed(futures):
+                if stop_event is not None and stop_event.is_set():
+                    break
+                try:
+                    proxy, is_working, latency, scheme = future.result()
+                except Exception as e:
+                    log(f"[ERROR] Unexpected error testing proxy: {e}")
+                    continue
+                if is_working and latency is not None:
+                    working.append(
+                        {
+                            "proxy": proxy,
+                            "latency": round(latency, 3),
+                            "scheme": scheme,
+                            "target": target,
+                        }
+                    )
+                    log(f"[OK] {proxy} via {scheme} - {latency:.3f}s")
+                else:
+                    log(f"[FAIL] {proxy}")
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     persist_results(working)
 
