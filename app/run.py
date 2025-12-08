@@ -46,6 +46,10 @@ class LogBuffer:
         with self._lock:
             return list(self._entries)
 
+    def clear(self) -> None:
+        with self._lock:
+            self._entries.clear()
+
 
 class ProxyRunner:
     def __init__(self, log_buffer: LogBuffer, log_handler: LogHandler | None = None):
@@ -281,6 +285,9 @@ def create_app(autostart: bool = False) -> Flask:
                 os.environ.pop("MAX_PER_TARGET", None)
         else:
             os.environ.pop("MAX_PER_TARGET", None)
+        if runner.is_running:
+            return "Scan already running", 409
+        log_buffer.clear()
         started = runner.start()
         if not started:
             return "Scan already running", 409
