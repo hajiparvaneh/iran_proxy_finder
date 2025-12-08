@@ -362,7 +362,8 @@
       async function fetchLogs() {
         const res = await fetch("/logs");
         const data = await res.json();
-        const html = data.logs
+        const logs = [...data.logs].reverse();
+        const html = logs
           .map((l) =>
             l.startsWith("[OK]")
               ? '<span style="color:#16a34a">' + esc(l) + "</span>"
@@ -370,7 +371,7 @@
           )
           .join("<br>");
         logsPre.innerHTML = html;
-        const oks = data.logs.filter((l) => l.startsWith("[OK]"));
+        const oks = logs.filter((l) => l.startsWith("[OK]"));
         const seen = new Set();
         const items = [];
         for (const line of oks) {
