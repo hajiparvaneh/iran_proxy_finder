@@ -21,12 +21,12 @@ jobs:
             display_name: Windows x64
             asset_label: windows-x64
             exec_suffix: .exe
-            data_sep: ;
+            data_sep: ";"
           - os: macos-latest
             display_name: macOS x64/arm64
             asset_label: macos-universal
             exec_suffix: ""
-            data_sep: :
+            data_sep: ":"
     defaults:
       run:
         shell: bash
