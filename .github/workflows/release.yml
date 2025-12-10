@@ -1,0 +1,80 @@
+name: Release Binaries
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.display_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            display_name: Windows x64
+            asset_label: windows-x64
+            exec_suffix: .exe
+            data_sep: ;
+          - os: macos-latest
+            display_name: macOS x64/arm64
+            asset_label: macos-universal
+            exec_suffix: ""
+            data_sep: :
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app/requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller app/run.py --name IranProxyFinder --onefile --noconsole \
+            --add-data "app/templates${{ matrix.data_sep }}templates" \
+            --add-data "app/assets${{ matrix.data_sep }}assets"
+
+      - name: Package artifact
+        env:
+          EXEC_SUFFIX: ${{ matrix.exec_suffix }}
+          ASSET_LABEL: ${{ matrix.asset_label }}
+        run: |
+          EXEC_PATH="dist/IranProxyFinder${EXEC_SUFFIX}"
+          ARCHIVE="IranProxyFinder-${ASSET_LABEL}.zip"
+          export EXEC_PATH ARCHIVE
+          python - <<'PY'
+import os
+import zipfile
+exec_path = os.environ["EXEC_PATH"]
+archive_path = os.environ["ARCHIVE"]
+if not os.path.exists(exec_path):
+    raise SystemExit(f"Executable not found: {exec_path}")
+with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
+    zf.write(exec_path, os.path.basename(exec_path))
+print(f"Created {archive_path}")
+PY
+          echo "RELEASE_ASSET=$ARCHIVE" >> "$GITHUB_ENV"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.RELEASE_ASSET }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
