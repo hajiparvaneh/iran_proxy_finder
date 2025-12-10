@@ -1,9 +1,10 @@
 name: Release Binaries
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -72,9 +73,32 @@ print(f"Created {archive_path}")
 PY
           echo "RELEASE_ASSET=$ARCHIVE" >> "$GITHUB_ENV"
 
-      - name: Upload release asset
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_label }}
+          path: ${{ env.RELEASE_ASSET }}
+
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: List downloaded artifacts
+        run: ls -R release-assets
+
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.RELEASE_ASSET }}
+          tag_name: ${{ github.ref_name }}
+          name: Iran Proxy Finder ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release-assets/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
