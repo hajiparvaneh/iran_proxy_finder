@@ -61,16 +61,16 @@ jobs:
           ARCHIVE="IranProxyFinder-${ASSET_LABEL}.zip"
           export EXEC_PATH ARCHIVE
           python - <<'PY'
-import os
-import zipfile
-exec_path = os.environ["EXEC_PATH"]
-archive_path = os.environ["ARCHIVE"]
-if not os.path.exists(exec_path):
-    raise SystemExit(f"Executable not found: {exec_path}")
-with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
-    zf.write(exec_path, os.path.basename(exec_path))
-print(f"Created {archive_path}")
-PY
+          import os
+          import zipfile
+          exec_path = os.environ["EXEC_PATH"]
+          archive_path = os.environ["ARCHIVE"]
+          if not os.path.exists(exec_path):
+              raise SystemExit(f"Executable not found: {exec_path}")
+          with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
+              zf.write(exec_path, os.path.basename(exec_path))
+          print(f"Created {archive_path}")
+          PY
           echo "RELEASE_ASSET=$ARCHIVE" >> "$GITHUB_ENV"
 
       - name: Upload workflow artifact
